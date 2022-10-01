@@ -1,10 +1,13 @@
-
 import uuid
 from fastapi import FastAPI
 from fastapi import Body
-from app.contracts import Emoji, User, UserTheme, Message
+from app.contracts import Emoji, User, UserTheme, Message, Session, Reaction
 import app.db.methods as m
+from app.utils.emoji import merge_emoji
+import os
+import base64
 
+import app.utils.json_responses as js
 
 app = FastAPI()
 
@@ -12,7 +15,7 @@ app = FastAPI()
 @app.get("/emojis")
 async def get_emojis():
     """
-    get_emojis 
+    get_emojis
         Returns list of emojis.
 
     Returns:
@@ -23,112 +26,149 @@ async def get_emojis():
         }
     """
 
-    # return hard code 
-    # emojis from media in binary form
+    start_emojis = {"items": []}
 
-    
+    for emoji in range(5 + 1):
+        with open(os.path.abspath(f"./app/static/emoji/{emoji}.png"), "rb") as file:
+            photo = file.read()
+        emoji_list = {"id": emoji, "data": base64.encodebytes(photo).decode("utf-8")}
+        start_emojis["items"].append(emoji_list)
+
+    return start_emojis
+
+
+@app.get(
+    "/updates/{user_id}", responses={200: js.make_example_response(js.json_updates)}
+)
+async def get_updates(user_id: str):
+    """
+    get_update
+        Get last updates from database for user.
+    """
+
+    message = m.take_updated_message(user_id)
+    session = m.take_updated_session(user_id)
+    reaction = m.take_updated_reaction(user_id)
+    task = m.take_updated_task(user_id)
+
     return {
-        "emojis": [
-            {
-                "id": 1,
-                "data": "dsadasdada"
-            },
-            {
-                "id": 1,
-                "data": "dsadasdada"
-            }
-        ]
+        "messages": message,
+        "reaction": reaction,
+        "session_open": session,
+        "task": task,
     }
+
+
+@app.get(
+    "/find_session", responses={200: js.make_example_response(js.json_find_session)}
+)
+async def find_session(user_id: str, user_emoji: int):
+    """
+    find_session
+        Checks out information about created session for user.
+        If it exists, session will return with id another user.
+        Another way tries to create session with others.
+
+    _extra_summary_
+        Use it like a long polling.
+
+    Args:
+        user_id:
+        user_emoji:
+
+    Returns: {
+        session: user_id | None
+    }
+    """
+
+    user = User(id=user_id, emoji=user_emoji)
+
+    session = m.check_session(user)
+
+    if session:
+        m.delete_matching(user)
+        return {"session": session}
+    elif not session and not m.check_matching(user):
+        m.create_matching(user)
+        return {"session": None}
+
+    new_session = m.create_session(user)
+    if new_session:
+        m.delete_matching(user)
+        return {"session": new_session}
+
+    return {"session": None}
 
 
 @app.post("/create_emoji")
 async def create_emoji(emojis: list[int] | None = Body(embed=True)):
     """
     create_emoji
-        Gets list of emojis and returns average emoji with background
-
+        Gets list of emojis and returns average emoji with background.
 
     Args:
         emojis (list[Emoji]): users clicked emojis
     """
 
     background: hex = "#ABCDEF"
-    emoji = emojis[0]
 
-    # gets list int emoji
-    # returns binary
-    
+    emoji = merge_emoji(emojis)
+    emoji_binary: bytes
+
+    with open(os.path.abspath(f"./app/static/emoji/{emoji}.png"), "rb") as photo:
+        emoji_binary = photo.read()
+
     return {
-        "emoji": emoji,
-        "background": background
+        "emoji": base64.encodebytes(emoji_binary).decode("utf-8"),
+        "background": background,
     }
-
-
-@app.post("/matching")
-async def create_matching(user: User):
-    """
-    match_users 
-        Gets user id and formed emotion, after that finds 
-        another user able to be matched.
-
-    Args:
-        user_id (uuid.UUID): unique user id
-        emoji (Emoji): current emoji
-    """
-
-    m.create_matching(user)
-    res = m.find_session(user)
-    if not res:
-        return {"session": None}
-
-    m.delete_matching(res["session"], user.id)
-    m.create_session(res["session"], user.id)
-
-    return {"session": res}
-
-
-@app.get("/poll_mathing")
-async def find_poll_matching(user: User):
-    session = m.find_session(user)
-    if session:
-        return {"session": session}
-    return {"session": None}
 
 
 @app.post("/create_message")
 async def create_message(message: Message):
     """
     create_message
-        Gets message and storeges that in database.
+        Gets message and storages that in database.
 
     _extended_summary_
         Client gets updates every 200 ms to get updates (polling).
     """
-    
+
     m.create_message(message)
 
 
-@app.get("/get_update_msg/{user_id}")
-async def get_update_msg(user_id):
+@app.post("/create_reaction")
+async def create_reaction(reaction: Reaction):
     """
-    get_update
-        Get last updates from database for user.
+
+    Args:
+        reaction:
+
+    Returns:
+
     """
-    el = m.take_updated_msg_user(user_id)
-    return el
+
+    m.create_reaction(reaction)
 
 
-@app.put("/add_msg_emoji/{message_id}")
-async def add_msg_emoji(message_id: int):
-    ...
+@app.delete("/delete_session/{user_id}")
+async def delete_session(user_id: str):
+    """
+    delete_session
+        Delete session for user.
+
+    Args:
+        user_id: str
+    """
+
+    user = User(id=user_id, emoji=0)
+    session = m.check_session(user)
+    if session:
+        m.delete_session(Session(user_1=user_id, user_2=session))
+
+    m.delete_all_user_info(user_id)
 
 
-@app.post("/create_session")
-async def create_session():
-    ...
-
-
-@app.delete("/delete_session")
-async def delete_session():
-    ...
-
+@app.delete("/delete")
+async def delete():
+    m.delete_db(1)

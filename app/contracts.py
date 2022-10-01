@@ -1,6 +1,5 @@
 import uuid
 from pydantic import BaseModel
-
 from app.db.models import Base
 
 
@@ -9,18 +8,25 @@ class Emoji(BaseModel):
 
 
 class User(Emoji, BaseModel):
-    id: uuid.UUID
+    id: str
 
 
 class UserTheme(Emoji, BaseModel):
-    backgound: str
+    background: str
+
+
+class Session(BaseModel):
+    user_1: str
+    user_2: str
 
 
 class Message(BaseModel):
     msg_id: int
-    user_1: uuid.UUID
-    user_2: uuid.UUID
+    to_user: str
     photo: bytes
-    photo_rec: int | None
 
 
+class Reaction(BaseModel):
+    msg_id: int
+    to_user: str
+    emoji_id: int

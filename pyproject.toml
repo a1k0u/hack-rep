@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ls"
+version = "0.1.0"
+description = ""
+authors = ["a1k0u <alko7enko@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.85.0"
+psycopg2-binary = "^2.9.3"
+uvicorn = "^0.18.3"
+SQLAlchemy = "^1.4.41"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
