@@ -1,7 +1,9 @@
 
 import uuid
 from fastapi import FastAPI
-from app.contracts import Emoji, User, UserTheme
+from fastapi import Body
+from app.contracts import Emoji, User, UserTheme, Message
+import app.db.methods as m
 
 
 app = FastAPI()
@@ -20,16 +22,27 @@ async def get_emojis():
             ]
         }
     """
+
+    # return hard code 
+    # emojis from media in binary form
+
     
     return {
         "emojis": [
-            1, 2, 3, 4, 5 
+            {
+                "id": 1,
+                "data": "dsadasdada"
+            },
+            {
+                "id": 1,
+                "data": "dsadasdada"
+            }
         ]
     }
 
 
 @app.post("/create_emoji")
-async def create_emoji(emojis: list[Emoji] | None):
+async def create_emoji(emojis: list[int] | None = Body(embed=True)):
     """
     create_emoji
         Gets list of emojis and returns average emoji with background
@@ -40,8 +53,11 @@ async def create_emoji(emojis: list[Emoji] | None):
     """
 
     background: hex = "#ABCDEF"
-    emoji = emojis[0].emoji
+    emoji = emojis[0]
 
+    # gets list int emoji
+    # returns binary
+    
     return {
         "emoji": emoji,
         "background": background
@@ -49,7 +65,7 @@ async def create_emoji(emojis: list[Emoji] | None):
 
 
 @app.post("/matching")
-async def match_users(user: User):
+async def create_matching(user: User):
     """
     match_users 
         Gets user id and formed emotion, after that finds 
@@ -60,17 +76,27 @@ async def match_users(user: User):
         emoji (Emoji): current emoji
     """
 
-    # Matching
+    m.create_matching(user)
+    res = m.find_session(user)
+    if not res:
+        return {"session": None}
 
-    # create session
+    m.delete_matching(res["session"], user.id)
+    m.create_session(res["session"], user.id)
 
-    # return json with ids
-    
-    ...
+    return {"session": res}
+
+
+@app.get("/poll_mathing")
+async def find_poll_matching(user: User):
+    session = m.find_session(user)
+    if session:
+        return {"session": session}
+    return {"session": None}
 
 
 @app.post("/create_message")
-async def create_message():
+async def create_message(message: Message):
     """
     create_message
         Gets message and storeges that in database.
@@ -79,17 +105,17 @@ async def create_message():
         Client gets updates every 200 ms to get updates (polling).
     """
     
-    ...
+    m.create_message(message)
 
 
-@app.get("/get_update/{user_id}")
-async def get_update():
+@app.get("/get_update_msg/{user_id}")
+async def get_update_msg(user_id):
     """
     get_update
         Get last updates from database for user.
     """
-    
-    ...     
+    el = m.take_updated_msg_user(user_id)
+    return el
 
 
 @app.put("/add_msg_emoji/{message_id}")
