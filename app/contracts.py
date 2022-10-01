@@ -21,12 +21,12 @@ class Session(BaseModel):
 
 
 class Message(BaseModel):
-    msg_id: int
+    message_id: int
     to_user: str
-    photo: bytes
+    photo: str
 
 
 class Reaction(BaseModel):
-    msg_id: int
+    message_id: int
     to_user: str
     emoji_id: int

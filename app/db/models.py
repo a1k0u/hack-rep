@@ -25,7 +25,7 @@ class ReactionUpdates(Base):
     __tablename__ = "ReactionUpdates"
 
     id = Column(Integer, primary_key=True)
-    msg_id = Column(Integer)
+    message_id = Column(Integer)
     to_user = Column(String(36))
     emoji_id = Column(Integer)
 

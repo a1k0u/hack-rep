@@ -105,7 +105,7 @@ def delete_session(conn, session):
 @connect_to_db
 def create_message(conn, msg: Message):
     stmt = insert(MessagesUpdates).values(
-        message_id=msg.msg_id,
+        message_id=msg.message_id,
         to_user=msg.to_user,
         photo=msg.photo,
     )
@@ -113,6 +113,10 @@ def create_message(conn, msg: Message):
     conn.execute(stmt)
 
     session_info = __get_session_info(conn, msg.to_user)
+
+    if not session_info:
+        return None
+
     task_amount = session_info["task"]
 
     update_session_info = (
@@ -127,7 +131,7 @@ def create_message(conn, msg: Message):
 @connect_to_db
 def create_reaction(conn, reaction: Reaction):
     stmt = insert(ReactionUpdates).values(
-        to_user=reaction.to_user, msg_id=reaction.msg_id, emoji_id=reaction.emoji_id
+        to_user=reaction.to_user, message_id=reaction.message_id, emoji_id=reaction.emoji_id
     )
 
     conn.execute(stmt)
@@ -142,6 +146,9 @@ def take_updated_message(conn, user_id: str):
         return None
 
     __delete_updated_message(conn, user_id)
+
+    message.pop("id")
+    message.pop("to_user")
 
     return message
 
@@ -165,18 +172,22 @@ def take_updated_reaction(conn, used_id: str):
 
     __delete_updated_reaction(conn, used_id)
 
+    reaction.pop("id")
+    reaction.pop("to_user")
+
     return reaction
 
 
 @connect_to_db
 def take_updated_task(conn, user_id: str):
     session_info = __get_session_info(conn, user_id)
+
     if not session_info:
         return None
 
     task_amount = session_info["task"]
 
-    if (task_amount - 1) % 2 == 1:
+    if task_amount % 2 == 1:
         return None
 
     return "Отпрофь карфку"

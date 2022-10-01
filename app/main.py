@@ -12,7 +12,7 @@ import app.utils.json_responses as js
 app = FastAPI()
 
 
-@app.get("/emojis")
+@app.get("/emojis", responses={200: js.make_example_response(js.json_emoji)})
 async def get_emojis():
     """
     get_emojis
@@ -51,12 +51,16 @@ async def get_updates(user_id: str):
     reaction = m.take_updated_reaction(user_id)
     task = m.take_updated_task(user_id)
 
-    return {
-        "messages": message,
+    response = {
+        "message": message,
         "reaction": reaction,
         "session_open": session,
         "task": task,
     }
+
+    print(response)
+
+    return response
 
 
 @app.get(
@@ -87,20 +91,20 @@ async def find_session(user_id: str, user_emoji: int):
 
     if session:
         m.delete_matching(user)
-        return {"session": session}
+        return {"id": session}
     elif not session and not m.check_matching(user):
         m.create_matching(user)
-        return {"session": None}
+        return {"id": None}
 
     new_session = m.create_session(user)
     if new_session:
         m.delete_matching(user)
-        return {"session": new_session}
+        return {"id": new_session}
 
-    return {"session": None}
+    return {"id": None}
 
 
-@app.post("/create_emoji")
+@app.post("/create_emoji", responses={200: js.make_example_response(js.json_created_emoji)})
 async def create_emoji(emojis: list[int] | None = Body(embed=True)):
     """
     create_emoji
@@ -110,8 +114,6 @@ async def create_emoji(emojis: list[int] | None = Body(embed=True)):
         emojis (list[Emoji]): users clicked emojis
     """
 
-    background: hex = "#ABCDEF"
-
     emoji = merge_emoji(emojis)
     emoji_binary: bytes
 
@@ -119,8 +121,8 @@ async def create_emoji(emojis: list[int] | None = Body(embed=True)):
         emoji_binary = photo.read()
 
     return {
-        "emoji": base64.encodebytes(emoji_binary).decode("utf-8"),
-        "background": background,
+        "id": emoji,
+        "data": base64.encodebytes(emoji_binary).decode("utf-8"),
     }
 
 
