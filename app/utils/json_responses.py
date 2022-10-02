@@ -1,5 +1,5 @@
-import requests
 import base64
+import requests
 
 
 def make_example_response(json_dict):
@@ -9,19 +9,12 @@ def make_example_response(json_dict):
     }
 
 
-json_emoji = {
-    "items": [
-        {
-            "id": 1,
-            "data": "binary_data"
-        }
-    ]
-}
+json_emoji = {"items": [{"id": 1, "data": "binary_data"}]}
 
 json_created_emoji = {
-        "id": 1,
-        "data": "binary_data",
-    }
+    "id": 1,
+    "data": "binary_data",
+}
 
 json_find_session = {"id": "None | str"}
 
@@ -39,12 +32,11 @@ json_updates = {
 }
 
 if __name__ == "__main__":
-    msg = {
-        "message_id": 0,
-        "to_user": "5BD1BBEC-ABFD-491E-9E34-74B62041237D",
-        "photo": ""
-    }
+    with open("/home/a1k0u/Documents/hack-rep/app/static/emoji/11.png", "rb") as file:
+        msg = {
+            "message_id": 0,
+            "to_user": "dafsdfsdfdf",
+            "photo": base64.encodebytes(file.read()).decode("utf-8")
+        }
 
-    with open("../static/emoji/2.png", "rb") as f:
-        msg["photo"] = base64.encodebytes(f.read()).decode("utf-8")
     requests.post("http://localhost:8000/create_message", json=msg)

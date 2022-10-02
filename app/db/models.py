@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, LargeBinary
 from sqlalchemy.orm import declarative_base
 from app.db.db import get_engine
 
@@ -6,12 +6,12 @@ Base = declarative_base()
 
 
 class MessagesUpdates(Base):
-    __tablename__ = "MessagesUpdates"
+    __tablename__ = "MessageUpdates"
 
     id = Column(Integer, primary_key=True)
     message_id: int = Column(Integer)
     to_user: str = Column(String(36))
-    photo = Column(Text)
+    photo = Column(LargeBinary)
 
 
 class SessionUpdates(Base):
@@ -35,7 +35,7 @@ class MatchingUsers(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(String(36))
-    emoji = Column(Integer)
+    emoji_id = Column(Integer)
 
 
 class Sessions(Base):

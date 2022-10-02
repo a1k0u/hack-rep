@@ -42,7 +42,7 @@ def __get_session_info(conn, user_id: str):
 
 @connect_to_db
 def create_matching(conn, user: User):
-    stmt = insert(MatchingUsers).values(user_id=user.id, emoji=user.emoji)
+    stmt = insert(MatchingUsers).values(user_id=user.id, emoji_id=user.emoji)
 
     conn.execute(stmt)
 
@@ -77,7 +77,7 @@ def check_session(conn, user: User):
 @connect_to_db
 def create_session(conn, user: User):
     stmt = select(MatchingUsers).where(
-        and_(MatchingUsers.emoji == user.emoji, MatchingUsers.user_id != user.id)
+        and_(MatchingUsers.emoji_id == user.emoji, MatchingUsers.user_id != user.id)
     )
 
     suitable_users = conn.execute(stmt).fetchall()
@@ -107,7 +107,7 @@ def create_message(conn, msg: Message):
     stmt = insert(MessagesUpdates).values(
         message_id=msg.message_id,
         to_user=msg.to_user,
-        photo=msg.photo,
+        photo=bytes(msg.photo, "utf-8"),
     )
 
     conn.execute(stmt)
@@ -131,7 +131,9 @@ def create_message(conn, msg: Message):
 @connect_to_db
 def create_reaction(conn, reaction: Reaction):
     stmt = insert(ReactionUpdates).values(
-        to_user=reaction.to_user, message_id=reaction.message_id, emoji_id=reaction.emoji_id
+        to_user=reaction.to_user,
+        message_id=reaction.message_id,
+        emoji_id=reaction.emoji_id,
     )
 
     conn.execute(stmt)
@@ -147,10 +149,10 @@ def take_updated_message(conn, user_id: str):
 
     __delete_updated_message(conn, user_id)
 
-    message.pop("id")
-    message.pop("to_user")
+    msg = dict(message)
+    msg["photo"] = msg["photo"].decode("utf-8")
 
-    return message
+    return msg
 
 
 @connect_to_db
@@ -172,10 +174,7 @@ def take_updated_reaction(conn, used_id: str):
 
     __delete_updated_reaction(conn, used_id)
 
-    reaction.pop("id")
-    reaction.pop("to_user")
-
-    return reaction
+    return dict(reaction)
 
 
 @connect_to_db
@@ -213,3 +212,6 @@ def delete_db(conn, tnp):
 
     st4 = delete(SessionUpdates)
     conn.execute(st4)
+
+    st5 = delete(ReactionUpdates)
+    conn.execute(st5)

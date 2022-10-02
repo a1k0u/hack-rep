@@ -12,6 +12,12 @@ import app.utils.json_responses as js
 app = FastAPI()
 
 
+def __delete_extra_columns(response):
+    if response:
+        response.pop("id")
+        response.pop("to_user")
+
+
 @app.get("/emojis", responses={200: js.make_example_response(js.json_emoji)})
 async def get_emojis():
     """
@@ -46,14 +52,18 @@ async def get_updates(user_id: str):
         Get last updates from database for user.
     """
 
+    # message = m.take_updated_message(user_id)
+    # __delete_extra_columns(message)
+
     message = m.take_updated_message(user_id)
     session = m.take_updated_session(user_id)
-    reaction = m.take_updated_reaction(user_id)
+
+    # reaction = m.take_updated_reaction(user_id)
+
     task = m.take_updated_task(user_id)
 
     response = {
         "message": message,
-        "reaction": reaction,
         "session_open": session,
         "task": task,
     }
@@ -104,7 +114,9 @@ async def find_session(user_id: str, user_emoji: int):
     return {"id": None}
 
 
-@app.post("/create_emoji", responses={200: js.make_example_response(js.json_created_emoji)})
+@app.post(
+    "/create_emoji", responses={200: js.make_example_response(js.json_created_emoji)}
+)
 async def create_emoji(emojis: list[int] | None = Body(embed=True)):
     """
     create_emoji
