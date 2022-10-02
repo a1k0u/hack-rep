@@ -14,6 +14,9 @@ def merge_emoji(emo_list: List[int]) -> int:
     :return:
     """
 
+    if not emo_list:
+        return 0
+
     emojis = dict(
         {
             "0": 0,

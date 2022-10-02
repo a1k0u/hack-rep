@@ -9,6 +9,7 @@ from app.db.models import (
 )
 from app.contracts import Message, User, Reaction
 from sqlalchemy import insert, select, or_, delete, and_, update
+import base64
 
 
 def __delete_updated_message(conn, user_id: str):
@@ -107,7 +108,7 @@ def create_message(conn, msg: Message):
     stmt = insert(MessagesUpdates).values(
         message_id=msg.message_id,
         to_user=msg.to_user,
-        photo=bytes(msg.photo, "utf-8"),
+        photo=base64.b64decode(msg.photo),
     )
 
     conn.execute(stmt)
@@ -150,7 +151,7 @@ def take_updated_message(conn, user_id: str):
     __delete_updated_message(conn, user_id)
 
     msg = dict(message)
-    msg["photo"] = msg["photo"].decode("utf-8")
+    msg["photo"] = base64.encodebytes(msg["photo"]).decode("utf-8")
 
     return msg
 

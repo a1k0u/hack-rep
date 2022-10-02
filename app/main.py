@@ -1,76 +1,18 @@
 import uuid
+import logging
+import base64
+import os
+
 from fastapi import FastAPI
 from fastapi import Body
-from app.contracts import Emoji, User, UserTheme, Message, Session, Reaction
-import app.db.methods as m
-from app.utils.emoji import merge_emoji
-import os
-import base64
 
+import app.db.methods as m
 import app.utils.json_responses as js
+from app.utils.log_tools import get_line_log
+from app.utils.emoji import merge_emoji
+from app.contracts import Emoji, User, UserTheme, Message, Session, Reaction
 
 app = FastAPI()
-
-
-def __delete_extra_columns(response):
-    if response:
-        response.pop("id")
-        response.pop("to_user")
-
-
-@app.get("/emojis", responses={200: js.make_example_response(js.json_emoji)})
-async def get_emojis():
-    """
-    get_emojis
-        Returns list of emojis.
-
-    Returns:
-        _type_: {
-            emoji: [
-                ...
-            ]
-        }
-    """
-
-    start_emojis = {"items": []}
-
-    for emoji in range(5 + 1):
-        with open(os.path.abspath(f"./app/static/emoji/{emoji}.png"), "rb") as file:
-            photo = file.read()
-        emoji_list = {"id": emoji, "data": base64.encodebytes(photo).decode("utf-8")}
-        start_emojis["items"].append(emoji_list)
-
-    return start_emojis
-
-
-@app.get(
-    "/updates/{user_id}", responses={200: js.make_example_response(js.json_updates)}
-)
-async def get_updates(user_id: str):
-    """
-    get_update
-        Get last updates from database for user.
-    """
-
-    # message = m.take_updated_message(user_id)
-    # __delete_extra_columns(message)
-
-    message = m.take_updated_message(user_id)
-    session = m.take_updated_session(user_id)
-
-    # reaction = m.take_updated_reaction(user_id)
-
-    task = m.take_updated_task(user_id)
-
-    response = {
-        "message": message,
-        "session_open": session,
-        "task": task,
-    }
-
-    print(response)
-
-    return response
 
 
 @app.get(
@@ -98,6 +40,8 @@ async def find_session(user_id: str, user_emoji: int):
     user = User(id=user_id, emoji=user_emoji)
 
     session = m.check_session(user)
+
+    logging.debug(get_line_log(user_id, session, "session"))
 
     if session:
         m.delete_matching(user)
@@ -127,14 +71,10 @@ async def create_emoji(emojis: list[int] | None = Body(embed=True)):
     """
 
     emoji = merge_emoji(emojis)
-    emoji_binary: bytes
-
-    with open(os.path.abspath(f"./app/static/emoji/{emoji}.png"), "rb") as photo:
-        emoji_binary = photo.read()
 
     return {
         "id": emoji,
-        "data": base64.encodebytes(emoji_binary).decode("utf-8"),
+        "data": "",
     }
 
 
