@@ -185,12 +185,11 @@ def take_updated_task(conn, user_id: str):
     if not session_info:
         return None
 
-    task_amount = session_info["task"]
+    task_count = session_info["task"]
 
-    if task_amount % 2 == 1:
-        return None
+    tsk = [f"Отпрофь карфку{i}" for i in range(10)]
 
-    return "Отпрофь карфку"
+    return tsk[(task_count // 2) % len(tsk)]
 
 
 @connect_to_db
