@@ -78,7 +78,7 @@ def check_session(conn, user: User):
 @connect_to_db
 def create_session(conn, user: User):
     stmt = select(MatchingUsers).where(
-        and_(MatchingUsers.emoji_id == user.emoji, MatchingUsers.user_id != user.id)
+        MatchingUsers.user_id != user.id
     )
 
     suitable_users = conn.execute(stmt).fetchall()
@@ -187,9 +187,15 @@ def take_updated_task(conn, user_id: str):
 
     task_count = session_info["task"]
 
-    tsk = [f"Отпрофь карфку{i}" for i in range(10)]
+    questions = [
+        "Изобрази удивление и поделись селфи",
+        "Сфотографируйтесь с первым попавшимся человеком",
+        "Сфотографируй то, что вызывает у тебя улыбку",
+        "Отправьте последнее фото из вашей галереи",
+        "Поделись улыбкою своей"
+    ]
 
-    return tsk[(task_count // 2) % len(tsk)]
+    return questions[(task_count // 2) % len(questions)]
 
 
 @connect_to_db

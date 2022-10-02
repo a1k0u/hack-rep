@@ -1,1 +1,3 @@
-web: gunicorn -w 3 -k uvicorn.workers.UvicornWorker app.main:app
+web: gunicorn runp-heroku:app
+init: python db_create.py && pybabel compile -d app/translations
+upgrade: python db_upgrade.py && pybabel compile -d app/translations
