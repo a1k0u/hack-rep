@@ -47,5 +47,5 @@ class Sessions(Base):
     task: int = Column(Integer)
 
 
-if __name__ == "__main__":
+def create_tables():
     Base.metadata.create_all(get_engine())
